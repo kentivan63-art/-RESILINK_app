@@ -1,0 +1,6 @@
+{
+  "name": "Community Disaster & First-Response Triage Hub",
+  "description": "Offline-first resilient emergency triage and first-response system featuring 1-Tap SOS beacons, offline Barangay proxy scout tagging, and AI-powered operational command map.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
