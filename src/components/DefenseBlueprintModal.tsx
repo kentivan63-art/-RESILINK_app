@@ -226,7 +226,7 @@ export const DefenseBlueprintModal: React.FC = () => {
             <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
               <span className="font-bold text-white block mb-1">🗺️ Maps & GIS ($0)</span>
               <p className="text-slate-400">
-                Uses <strong>Leaflet.js + OpenStreetMap (CartoDB tiles)</strong> instead of paid Google Maps Platform. Unlimited map tile requests with zero credit card or billing required.
+                Uses <strong>Leaflet.js + OpenStreetMap standard tiles</strong> instead of paid Google Maps Platform. Unlimited map tile requests with zero credit card or billing required.
               </p>
             </div>
 
