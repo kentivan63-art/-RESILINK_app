@@ -10,7 +10,9 @@ import {
   MapPin, 
   BookOpen, 
   Activity,
-  BatteryCharging
+  BatteryCharging,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { NetworkMode } from '../types';
 
@@ -35,12 +37,39 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   offlineQueueCount,
   onOpenProfileModal,
 }) => {
+  const navRef = React.useRef<HTMLElement | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
+  const [canScrollRight, setCanScrollRight] = React.useState(true);
+
+  const updateScrollIndicators = React.useCallback(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+  }, []);
+
+  React.useEffect(() => {
+    updateScrollIndicators();
+    window.addEventListener('resize', updateScrollIndicators);
+    return () => window.removeEventListener('resize', updateScrollIndicators);
+  }, [updateScrollIndicators]);
+
+  const slideMenu = (direction: 'left' | 'right') => {
+    if (!navRef.current) return;
+    const scrollAmount = 220;
+    navRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    });
+  };
+
   return (
     <header className="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         
         {/* Brand & Live Status */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-lg shadow-rose-950/50">
               <ShieldAlert className="w-5 h-5 text-white animate-pulse" />
@@ -88,83 +117,121 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+        {/* Navigation Tabs with < and > Slide Controls */}
+        <div className="relative flex items-center min-w-0 flex-1 md:mx-2">
+          {/* Left < Slide Button */}
           <button
-            id="nav-tab-citizen-sos"
-            onClick={() => setActiveTab('citizen_sos')}
-            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
-              activeTab === 'citizen_sos'
-                ? 'bg-rose-600 text-white shadow-md shadow-rose-900/40 ring-1 ring-rose-400/50'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+            type="button"
+            onClick={() => slideMenu('left')}
+            disabled={!canScrollLeft}
+            aria-label="Slide menu left"
+            title="Slide menu left"
+            className={`hidden md:flex items-center justify-center w-7 h-7 rounded-lg border text-xs font-bold shrink-0 mr-1.5 transition-all ${
+              canScrollLeft
+                ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border-slate-700 shadow-sm cursor-pointer'
+                : 'bg-slate-900/40 text-slate-600 border-slate-800/60 opacity-40 cursor-not-allowed'
             }`}
           >
-            <Radio className="w-4 h-4" />
-            <span>1-Tap SOS Beacon</span>
+            <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <button
-            id="nav-tab-scout-mode"
-            onClick={() => setActiveTab('scout_mode')}
-            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 relative ${
-              activeTab === 'scout_mode'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-900/40 ring-1 ring-amber-400/50'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
+          <nav
+            ref={navRef}
+            onScroll={updateScrollIndicators}
+            className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none scroll-smooth min-w-0 flex-1"
           >
-            <Users className="w-4 h-4" />
-            <span>Barangay Scout (Offline)</span>
-            {offlineQueueCount > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 font-bold text-[10px]">
-                {offlineQueueCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            id="nav-tab-command-map"
-            onClick={() => setActiveTab('command_map')}
-            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
-              activeTab === 'command_map'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/40 ring-1 ring-indigo-400/50'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <MapPin className="w-4 h-4" />
-            <span>Command Map & AI Triage</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700">
-              {activeIncidentsCount}
-            </span>
-          </button>
-
-          <button
-            id="nav-tab-defense-blueprint"
-            onClick={() => setActiveTab('defense_blueprint')}
-            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
-              activeTab === 'defense_blueprint'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/40 ring-1 ring-emerald-400/50'
-                : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 border border-emerald-500/30'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Capstone Defense</span>
-          </button>
-
-          {onOpenProfileModal && (
             <button
-              id="nav-btn-profile-setup"
-              onClick={onOpenProfileModal}
-              className="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 text-indigo-300 hover:text-white bg-indigo-950/50 hover:bg-indigo-900/60 border border-indigo-500/30 transition-all shrink-0"
-              title="Edit Family Representative, Address & GPS Coordinates"
+              id="nav-tab-citizen-sos"
+              onClick={() => setActiveTab('citizen_sos')}
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+                activeTab === 'citizen_sos'
+                  ? 'bg-rose-600 text-white shadow-md shadow-rose-900/40 ring-1 ring-rose-400/50'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
             >
-              <Activity className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Set My Profile</span>
+              <Radio className="w-4 h-4" />
+              <span>1-Tap SOS Beacon</span>
             </button>
-          )}
-        </nav>
+
+            <button
+              id="nav-tab-scout-mode"
+              onClick={() => setActiveTab('scout_mode')}
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 relative ${
+                activeTab === 'scout_mode'
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-900/40 ring-1 ring-amber-400/50'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Barangay Scout (Offline)</span>
+              {offlineQueueCount > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 font-bold text-[10px]">
+                  {offlineQueueCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              id="nav-tab-command-map"
+              onClick={() => setActiveTab('command_map')}
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+                activeTab === 'command_map'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/40 ring-1 ring-indigo-400/50'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Command Map & AI Triage</span>
+              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700">
+                {activeIncidentsCount}
+              </span>
+            </button>
+
+            <button
+              id="nav-tab-defense-blueprint"
+              onClick={() => setActiveTab('defense_blueprint')}
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
+                activeTab === 'defense_blueprint'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/40 ring-1 ring-emerald-400/50'
+                  : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 border border-emerald-500/30'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Capstone Defense</span>
+            </button>
+
+            {onOpenProfileModal && (
+              <button
+                id="nav-btn-profile-setup"
+                onClick={onOpenProfileModal}
+                className="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 text-indigo-300 hover:text-white bg-indigo-950/50 hover:bg-indigo-900/60 border border-indigo-500/30 transition-all shrink-0"
+                title="Edit Family Representative, Address & GPS Coordinates"
+              >
+                <Activity className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Set My Profile</span>
+              </button>
+            )}
+          </nav>
+
+          {/* Right > Slide Button */}
+          <button
+            type="button"
+            onClick={() => slideMenu('right')}
+            disabled={!canScrollRight}
+            aria-label="Slide menu right"
+            title="Slide menu right for more buttons"
+            className={`hidden md:flex items-center justify-center w-7 h-7 rounded-lg border text-xs font-bold shrink-0 ml-1.5 transition-all ${
+              canScrollRight
+                ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border-slate-700 shadow-sm cursor-pointer'
+                : 'bg-slate-900/40 text-slate-600 border-slate-800/60 opacity-40 cursor-not-allowed'
+            }`}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Network & Hardware Telemetry Simulator (Desktop) */}
-        <div className="hidden md:flex items-center gap-2 bg-slate-950/80 px-3 py-1 rounded-lg border border-slate-800">
+        <div className="hidden md:flex items-center gap-2 bg-slate-950/80 px-3 py-1 rounded-lg border border-slate-800 shrink-0">
           <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
             <span className="text-[11px] text-slate-500 uppercase tracking-wider font-sans">Simulate Network:</span>
           </div>
